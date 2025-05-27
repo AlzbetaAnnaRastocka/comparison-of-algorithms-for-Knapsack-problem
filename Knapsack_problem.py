@@ -165,8 +165,11 @@ def compare_different_input_size(input_sizes, max_weight, max_value, epsilons):
     ]
     results = []
     for n in input_sizes:
-        W = int(n * (1 + max_weight) / 2)
+        
         items = generate_instances(n, max_value, max_weight)
+        total_weight = sum(weight for _, weight in items)
+
+        W = int(total_weight * 0.6)
         for name, func in methods:
             if name == "Brute-force" and n > 20:
                 continue
