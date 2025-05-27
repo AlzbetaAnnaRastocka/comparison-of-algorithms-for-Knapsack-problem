@@ -221,6 +221,7 @@ def main():
     #   number_of_items       : how many items to generate
     #   epsilon               : approximation factor for FPTAS (e.g. 0.1)
     #   show_items            : # # set to False to print only the total value as a result of each method; if True, it also prints the selected items!
+    
     max_weight= 100
     max_value_for_item = 100
     number_of_items = 10
