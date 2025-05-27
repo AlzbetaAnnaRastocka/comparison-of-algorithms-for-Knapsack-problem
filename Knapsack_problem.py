@@ -160,29 +160,53 @@ def FPTAS_knapsack_without_backtrack(items, weight_limit, epsilon):
 def compare_different_input_size(input_sizes, max_weight, max_value, epsilons):
     methods = [
         ("Brute-force", brute_force_knapsack),
-        ("DP",           dynamic_programming_knapsack),
         ("Greedy",       greedy_knapsack),
     ]
-    results = []
-    for n in input_sizes:
+
+    results = [] 
         
+    for n in input_sizes:
+
         items = generate_instances(n, max_value, max_weight)
         total_weight = sum(weight for _, weight in items)
+        knapsack_capacity = int(total_weight * 0.6)
 
-        W = int(total_weight * 0.6)
+        start = time.perf_counter()
+        _, optimal_value = dynamic_programming_knapsack(items, knapsack_capacity)
+        dp_elapsed = time.perf_counter() - start
+        
+        results.append({
+            "method": "DP",
+            "n": n,
+            "time": dp_elapsed,
+            "approx_ratio": 1.0  # optimal value compared to itself
+        })
+
         for name, func in methods:
-            if name == "Brute-force" and n > 20:
+            if name == "Brute-force" and n > 16:
                 continue
             start = time.perf_counter()
-            func(items, max_weight)
+            soulution, value = func(items, knapsack_capacity)
             elapsed = time.perf_counter() - start
-            results.append({"method": name, "n": n, "time": elapsed})
+            approx_ratio = value / optimal_value if optimal_value > 0 else 0
+            results.append({
+                "method": name,
+                "n": n, 
+                "time": elapsed,
+                "approx_ratio": approx_ratio
+                })
 
         for eps in epsilons:
              start = time.perf_counter()
-             FPTAS_knapsack_without_backtrack(items, max_weight, eps)
+             value = FPTAS_knapsack_without_backtrack(items, knapsack_capacity, eps)
              elapsed = time.perf_counter() - start
-             results.append({"method": f"FPTAS ε={eps}", "n": n, "time": elapsed})
+             approx_ratio = value / optimal_value if optimal_value > 0 else 0
+             results.append({
+                "method": f"FPTAS ε={eps}",
+                "n": n, 
+                "time": elapsed,
+                "approx_ratio": approx_ratio
+                })
 
     df = pd.DataFrame(results)
 
@@ -194,27 +218,53 @@ def compare_different_input_size(input_sizes, max_weight, max_value, epsilons):
         "ytick.labelsize": 28        #         ytickov
     })
 
+    # GRAF APROXIMACNEHO POMERU
+
+    markers = {
+    "DP": "s",
+    "Greedy": "x",
+    "FPTAS ε=0.2": "^",
+    "FPTAS ε=0.5": "^",  # diamant
+    "FPTAS ε=0.8": "^"
+    }
+
     fig, ax = plt.subplots(figsize=(16, 9))
     for name in df["method"].unique():
         sub = df[df["method"] == name]
-        ax.plot(sub["n"], sub["time"], marker="o", label=name)
+        ax.plot(sub["n"], sub["approx_ratio"], marker=markers.get(name, "o"), label=name)
 
-    ax.set_xscale('log')
-    ax.set_yscale('log')
-
+    ax.set_xscale("log")
     ax.set_xlim(7, 1100)
     ax.set_xticks([10, 100, 1000])
     ax.set_xticklabels([r'$10^1$', r'$10^2$', r'$10^3$'])
-   
+
+    ax.set_xlabel(r'Počet predmetov $n$')
+    ax.set_ylabel(r'Pomer získanej hodnoty ku optimu $v / v_{\mathrm{opt}}$')
+    ax.set_title(r'Kvalita nájdeného riešenia voči optimálnemu riešeniu (DP)')
     ax.grid(True, which='both', ls='--', alpha=0.3)
     ax.legend()
-    ax.set_xlabel("Počet predmetov (n)")
-    ax.set_ylabel("Čas (s)")
-    ax.set_title("Čas behu jednotlivých algoritmov v závislosti od počtu predmetov")
-
     plt.tight_layout()
     plt.show()
 
+    # GRAF ČASOVEJ ZLOŹITOSTI
+    fig, ax = plt.subplots(figsize=(16, 9))
+    for name in df["method"].unique():
+        sub = df[df["method"] == name]
+        ax.plot(sub["n"], sub["time"], marker=markers.get(name, "o"), label=name)
+
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    ax.set_xlim(7, 1100)
+    ax.set_xticks([10, 100, 1000])
+    ax.set_xticklabels([r'$10^1$', r'$10^2$', r'$10^3$'])
+
+    ax.set_xlabel(r'Počet predmetov $n$')
+    ax.set_ylabel("Čas (s)")
+    ax.set_title("Čas behu jednotlivých algoritmov v závislosti od počtu predmetov")
+    ax.grid(True, which='both', ls='--', alpha=0.3)
+    ax.legend()
+    plt.tight_layout()
+    plt.show()
 
 def main():
 
